@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Prediction App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-cloud-sun"></i> Weather Forecast</h1>
+        
+        <form method="POST">
+            <input type="text" name="city" placeholder="Enter city name" required>
+            <button type="submit"><i class="fas fa-search"></i> Get Weather</button>
+        </form>
+
+        {% if error %}
+        <div class="error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if weather_data %}
+        <div class="weather-info" data-weather="{{ weather_data.current.condition.text }}">
+            <div class="weather-effect"></div>
+            <h2>Weather in {{ weather_data.location.name }}, {{ weather_data.location.country }}</h2>
+            
+            <div class="current-weather">
+                <h3>Current Weather</h3>
+                {% if weather_data.current.condition.icon %}
+                <img src="https:{{ weather_data.current.condition.icon }}" alt="Weather icon" class="weather-icon">
+                {% endif %}
+                <div class="temperature">{{ weather_data.current.temp_c }}°C</div>
+                <div class="condition">{{ weather_data.current.condition.text }}</div>
+                
+                <div class="weather-details">
+                    <div class="weather-detail-item">
+                        <div class="weather-detail-label">
+                            <i class="fas fa-tint"></i> Humidity
+                        </div>
+                        <div class="weather-detail-value">{{ weather_data.current.humidity }}%</div>
+                    </div>
+                    <div class="weather-detail-item">
+                        <div class="weather-detail-label">
+                            <i class="fas fa-wind"></i> Wind
+                        </div>
+                        <div class="weather-detail-value">{{ weather_data.current.wind_kph }} km/h</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="forecast">
+                {% for day in weather_data.forecast.forecastday %}
+                <div class="forecast-day" data-weather="{{ day.day.condition.text|lower }}">
+                    <h4>{{ day.date }}</h4>
+                    {% if day.day.condition.icon %}
+                    <img src="https:{{ day.day.condition.icon }}" alt="Weather icon" class="weather-icon">
+                    {% endif %}
+                    <p><i class="fas fa-temperature-high"></i> Max: {{ day.day.maxtemp_c }}°C</p>
+                    <p><i class="fas fa-temperature-low"></i> Min: {{ day.day.mintemp_c }}°C</p>
+                    <p><i class="fas fa-cloud"></i> {{ day.day.condition.text }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        setTimeout(() => {
+                            entry.target.classList.remove('visible');
+                        }, 1500);
+                    }
+                });
+            }, {
+                threshold: 0.7,
+                root: null,
+                rootMargin: '0px'
+            });
+
+            document.querySelectorAll('.forecast-day').forEach(card => {
+                observer.observe(card);
+            });
+
+            // Add weather effects
+            function addWeatherEffects() {
+                const weatherInfo = document.querySelector('.weather-info');
+                const weatherEffect = document.querySelector('.weather-effect');
+                const currentWeather = weatherInfo.dataset.weather.toLowerCase();
+
+                // Remove all weather classes
+                weatherEffect.className = 'weather-effect';
+
+                // Add appropriate weather effect class
+                if (currentWeather.includes('rain')) {
+                    weatherEffect.classList.add('rain');
+                    // Add multiple raindrops
+                    for (let i = 0; i < 20; i++) {
+                        const drop = document.createElement('div');
+                        drop.className = 'raindrop';
+                        drop.style.left = Math.random() * 100 + '%';
+                        drop.style.animationDelay = Math.random() * 2 + 's';
+                        weatherEffect.appendChild(drop);
+                    }
+                } else if (currentWeather.includes('snow')) {
+                    weatherEffect.classList.add('snow');
+                    // Add multiple snowflakes
+                    for (let i = 0; i < 20; i++) {
+                        const flake = document.createElement('div');
+                        flake.className = 'snowflake';
+                        flake.style.left = Math.random() * 100 + '%';
+                        flake.style.animationDelay = Math.random() * 3 + 's';
+                        weatherEffect.appendChild(flake);
+                    }
+                } else if (currentWeather.includes('sunny') || currentWeather.includes('clear')) {
+                    weatherEffect.classList.add('sunny');
+                } else if (currentWeather.includes('cloud')) {
+                    weatherEffect.classList.add('cloudy');
+                } else if (currentWeather.includes('thunder')) {
+                    weatherEffect.classList.add('thunder');
+                }
+            }
+
+            // Initialize weather effects
+            addWeatherEffects();
+
+            // Re-trigger animation when scrolling
+            const forecast = document.querySelector('.forecast');
+            let scrollTimeout;
+            forecast.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    document.querySelectorAll('.forecast-day').forEach(card => {
+                        const rect = card.getBoundingClientRect();
+                        const isVisible = rect.left >= 0 && rect.right <= window.innerWidth;
+                        if (isVisible) {
+                            card.classList.add('visible');
+                            setTimeout(() => {
+                                card.classList.remove('visible');
+                            }, 1500);
+                        }
+                    });
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
